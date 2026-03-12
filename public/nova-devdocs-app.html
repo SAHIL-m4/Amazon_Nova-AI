@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova DevDocs — Voice Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0d1420;
+    --surface2: #111927;
+    --border: #1e2d42;
+    --border2: #243347;
+    --nova-blue: #00a8ff;
+    --nova-glow: rgba(0,168,255,0.15);
+    --nova-glow2: rgba(0,168,255,0.06);
+    --aws-orange: #ff9900;
+    --aws-orange-dim: rgba(255,153,0,0.12);
+    --text: #e8f0f8;
+    --text2: #7a9ab8;
+    --text3: #3d566e;
+    --green: #00e5a0;
+    --red: #ff4566;
+    --pulse: rgba(0,168,255,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Top glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(0,168,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── HEADER ─────────────────────────────────────── */
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,12,20,0.9);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--nova-blue), #0066cc);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 0 20px rgba(0,168,255,0.3);
+  }
+
+  .logo span { color: var(--nova-blue); }
+
+  .header-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: var(--aws-orange-dim);
+    border: 1px solid rgba(255,153,0,0.3);
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--aws-orange);
+    letter-spacing: 0.05em;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ─── MAIN LAYOUT ────────────────────────────────── */
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── SIDEBAR ────────────────────────────────────── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: rgba(13,20,32,0.6);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .model-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--nova-glow2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .model-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .model-icon.sonic { background: linear-gradient(135deg, #0066cc, var(--nova-blue)); }
+  .model-icon.lite { background: linear-gradient(135deg, #005599, #0088dd); }
+
+  .model-info { flex: 1; }
+  .model-name { font-weight: 600; font-size: 12px; color: var(--text); }
+  .model-desc { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+
+  .model-active {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  /* KB Upload */
+  .kb-drop {
+    border: 1.5px dashed var(--border2);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--nova-glow2);
+  }
+
+  .kb-drop:hover, .kb-drop.dragover {
+    border-color: var(--nova-blue);
+    background: var(--nova-glow);
+  }
+
+  .kb-drop-icon { font-size: 20px; margin-bottom: 6px; }
+  .kb-drop-text { font-size: 11px; color: var(--text2); line-height: 1.4; }
+  .kb-drop-text strong { color: var(--nova-blue); display: block; font-size: 12px; margin-bottom: 2px; }
+
+  #kb-file-input { display: none; }
+
+  .kb-files { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+  .kb-file-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text2);
+  }
+
+  .kb-file-item span:first-child { color: var(--green); }
+  .kb-file-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* History */
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-list::-webkit-scrollbar { width: 4px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .history-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .history-item:hover { background: var(--surface2); border-color: var(--border); }
+  .history-item.active { background: var(--nova-glow2); border-color: var(--border2); }
+
+  .history-q {
+    font-size: 11px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  .history-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .history-empty {
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── CHAT AREA ───────────────────────────────────── */
+  .chat-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+  }
+
+  .empty-orb {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--nova-blue), #003d7a);
+    box-shadow: 0 0 40px rgba(0,168,255,0.2), 0 0 80px rgba(0,168,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .empty-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .empty-sub {
+    font-size: 13px;
+    color: var(--text2);
+    text-align: center;
+    max-width: 340px;
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+    max-width: 500px;
+  }
+
+  .chip {
+    padding: 7px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .chip:hover {
+    background: var(--nova-glow);
+    border-color: var(--nova-blue);
+    color: var(--nova-blue);
+  }
+
+  /* Messages */
+  .message { display: flex; gap: 12px; animation: msgIn 0.3s ease; }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .message.user .msg-avatar { background: linear-gradient(135deg, #1a3a5c, #2a5a8c); }
+  .message.assistant .msg-avatar {
+    background: linear-gradient(135deg, var(--nova-blue), #0055aa);
+    box-shadow: 0 0 12px rgba(0,168,255,0.25);
+  }
+
+  .msg-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .message.user .msg-bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-top-right-radius: 3px;
+  }
+
+  .message.assistant .msg-bubble {
+    background: var(--nova-glow2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-top-left-radius: 3px;
+  }
+
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .msg-model {
+    padding: 2px 6px;
+    background: var(--nova-glow2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--nova-blue);
+  }
+
+  .msg-voice-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--aws-orange);
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--nova-glow2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    border-top-left-radius: 3px;
+    width: fit-content;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--nova-blue);
+    animation: typingDot 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingDot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* ─── INPUT BAR ───────────────────────────────────── */
+  .input-bar {
+    padding: 16px 28px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(8,12,20,0.9);
+    backdrop-filter: blur(12px);
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 10px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--nova-blue);
+    box-shadow: 0 0 0 3px rgba(0,168,255,0.08);
+  }
+
+  #chat-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+    min-height: 20px;
+  }
+
+  #chat-input::placeholder { color: var(--text3); }
+
+  .input-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .btn-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+
+  .btn-icon:hover { background: var(--surface); color: var(--text); border-color: var(--border2); }
+
+  .btn-send {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: var(--nova-blue);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.15s;
+    box-shadow: 0 0 12px rgba(0,168,255,0.3);
+  }
+
+  .btn-send:hover { background: #00c0ff; transform: scale(1.05); }
+  .btn-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ─── MIC BUTTON ─────────────────────────────────── */
+  .btn-mic {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .btn-mic:hover { border-color: var(--nova-blue); color: var(--nova-blue); }
+
+  .btn-mic.recording {
+    background: rgba(255,69,102,0.12);
+    border-color: var(--red);
+    color: var(--red);
+    animation: micPulse 1s ease-in-out infinite;
+  }
+
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,69,102,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(255,69,102,0); }
+  }
+
+  /* ─── VOICE OVERLAY ──────────────────────────────── */
+  .voice-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8,12,20,0.92);
+    backdrop-filter: blur(20px);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .voice-overlay.active { display: flex; }
+
+  .voice-orb {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--nova-blue), #003d7a);
+    box-shadow:
+      0 0 0 0 var(--pulse),
+      0 0 60px rgba(0,168,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    animation: orbListen 1.5s ease-in-out infinite;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .voice-orb:hover { transform: scale(1.05); }
+
+  @keyframes orbListen {
+    0%, 100% {
+      box-shadow: 0 0 0 0 var(--pulse), 0 0 60px rgba(0,168,255,0.3);
+    }
+    50% {
+      box-shadow: 0 0 0 30px rgba(0,168,255,0), 0 0 80px rgba(0,168,255,0.4);
+    }
+  }
+
+  .voice-orb.speaking {
+    animation: orbSpeak 0.6s ease-in-out infinite alternate;
+  }
+
+  @keyframes orbSpeak {
+    from { transform: scale(1); }
+    to { transform: scale(1.08); }
+  }
+
+  .voice-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .voice-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .voice-transcript {
+    max-width: 500px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--nova-blue);
+    min-height: 20px;
+    font-style: italic;
+    opacity: 0.9;
+    padding: 0 20px;
+    line-height: 1.6;
+  }
+
+  /* Waveform bars */
+  .waveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 36px;
+  }
+
+  .wave-bar {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--nova-blue);
+    height: 4px;
+    transition: height 0.1s;
+  }
+
+  .recording .wave-bar {
+    animation: waveAnim 0.8s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { animation-delay: 0s; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+  .wave-bar:nth-child(7) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(8) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(9) { animation-delay: 0.1s; }
+
+  @keyframes waveAnim {
+    0%, 100% { height: 4px; }
+    50% { height: 28px; }
+  }
+
+  .voice-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .btn-voice-action {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-voice-stop {
+    background: rgba(255,69,102,0.12);
+    border: 1px solid var(--red);
+    color: var(--red);
+  }
+
+  .btn-voice-stop:hover { background: rgba(255,69,102,0.2); }
+
+  .btn-voice-close {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  .btn-voice-close:hover { background: var(--surface); color: var(--text); }
+
+  /* ─── TOAST ───────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Scrollbar for messages */
+  .messages { scrollbar-gutter: stable; }
+
+  /* Code in messages */
+  .msg-bubble code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--nova-blue);
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎙</div>
+    Nova<span>DevDocs</span>
+  </div>
+  <div class="header-badge">
+    <div class="status-dot"></div>
+    AMAZON NOVA · AWS BEDROCK
+  </div>
+</header>
+
+<!-- ─── MAIN ───────────────────────────────── -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Models -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Active Models</div>
+      <div class="model-card">
+        <div class="model-icon sonic">🎙</div>
+        <div class="model-info">
+          <div class="model-name">Nova 2 Sonic</div>
+          <div class="model-desc">speech-to-speech</div>
+        </div>
+        <div class="model-active"></div>
+      </div>
+      <div class="model-card">
+        <div class="model-icon lite">⚡</div>
+        <div class="model-info">
+          <div class="model-name">Nova 2 Lite</div>
+          <div class="model-desc">reasoning · retrieval</div>
+        </div>
+        <div class="model-active"></div>
+      </div>
+    </div>
+
+    <!-- Knowledge Base -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Knowledge Base</div>
+      <div class="kb-drop" id="kb-drop" onclick="document.getElementById('kb-file-input').click()">
+        <div class="kb-drop-icon">📁</div>
+        <div class="kb-drop-text">
+          <strong>Drop docs here</strong>
+          .md · .txt · .pdf · paste URL
+        </div>
+      </div>
+      <input type="file" id="kb-file-input" multiple accept=".txt,.md,.pdf">
+      <div class="kb-files" id="kb-files"></div>
+    </div>
+
+    <!-- History -->
+    <div class="sidebar-label" style="padding: 12px 16px 4px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.15em; color:var(--text3); text-transform:uppercase;">Recent</div>
+    <div class="history-list" id="history-list">
+      <div class="history-empty">// no history yet</div>
+    </div>
+
+  </div>
+
+  <!-- CHAT AREA -->
+  <div class="chat-area">
+
+    <!-- Messages -->
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-orb">🎙</div>
+        <div class="empty-title">Talk to your docs</div>
+        <div class="empty-sub">// Ask anything about your codebase,<br>APIs, or architecture — voice or text</div>
+        <div class="suggestion-chips">
+          <div class="chip" onclick="sendSuggestion(this)">How do I set up OAuth2?</div>
+          <div class="chip" onclick="sendSuggestion(this)">Explain the auth middleware</div>
+          <div class="chip" onclick="sendSuggestion(this)">What packages do I need?</div>
+          <div class="chip" onclick="sendSuggestion(this)">Show me the API endpoints</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="chat-input" rows="1" placeholder="// ask anything about your docs..."></textarea>
+        <div class="input-actions">
+          <button class="btn-mic" id="btn-mic" title="Voice input (Nova 2 Sonic)" onclick="toggleVoice()">🎙</button>
+          <button class="btn-send" id="btn-send" onclick="sendMessage()" title="Send">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── VOICE OVERLAY ──────────────────────── -->
+<div class="voice-overlay" id="voice-overlay">
+  <div class="voice-orb" id="voice-orb" onclick="stopRecording()">🎙</div>
+
+  <div class="waveform recording" id="waveform">
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+
+  <div class="voice-label" id="voice-label">Listening…</div>
+  <div class="voice-sub" id="voice-sub">// powered by Amazon Nova 2 Sonic</div>
+  <div class="voice-transcript" id="voice-transcript"></div>
+
+  <div class="voice-actions">
+    <button class="btn-voice-action btn-voice-stop" onclick="stopRecording()">Stop Recording</button>
+    <button class="btn-voice-action btn-voice-close" onclick="closeVoice()">Cancel</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ──────────────────────────────────────────
+let sessionId = null;
+let conversationHistory = [];
+let knowledgeBase = [];
+let isRecording = false;
+let mediaRecorder = null;
+let recognition = null;
+let liveTranscript = '';
+
+// ─── KNOWLEDGE BASE ─────────────────────────────────
+const kbDrop = document.getElementById('kb-drop');
+const kbInput = document.getElementById('kb-file-input');
+const kbFilesEl = document.getElementById('kb-files');
+
+kbDrop.addEventListener('dragover', e => { e.preventDefault(); kbDrop.classList.add('dragover'); });
+kbDrop.addEventListener('dragleave', () => kbDrop.classList.remove('dragover'));
+kbDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  kbDrop.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+kbInput.addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      knowledgeBase.push({ name: file.name, content: e.target.result });
+      renderKBFiles();
+      showToast(`✓ Loaded: ${file.name}`);
+    };
+    reader.readAsText(file);
+  });
+}
+
+function renderKBFiles() {
+  kbFilesEl.innerHTML = knowledgeBase.map(f => `
+    <div class="kb-file-item">
+      <span>✓</span>
+      <span class="kb-file-name">${f.name}</span>
+    </div>
+  `).join('');
+}
+
+// ─── SEND MESSAGE ────────────────────────────────────
+const inputEl = document.getElementById('chat-input');
+const messagesEl = document.getElementById('messages');
+const emptyState = document.getElementById('empty-state');
+const historyList = document.getElementById('history-list');
+let historyItems = [];
+
+// Auto-resize textarea
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function sendSuggestion(el) {
+  inputEl.value = el.textContent;
+  sendMessage();
+}
+
+async function sendMessage(text) {
+  const msg = (text || inputEl.value).trim();
+  if (!msg) return;
+
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+
+  // Hide empty state
+  emptyState.style.display = 'none';
+
+  // Add user message
+  addMessage('user', msg);
+
+  // Add to history
+  addHistory(msg);
+
+  // Add typing indicator
+  const typingId = 'typing-' + Date.now();
+  addTyping(typingId);
+
+  // Prepare context
+  const kbContext = knowledgeBase.length > 0
+    ? `\n\nKNOWLEDGE BASE DOCUMENTS:\n${knowledgeBase.map(f => `--- ${f.name} ---\n${f.content.slice(0, 3000)}`).join('\n\n')}`
+    : '';
+
+  const systemPrompt = `You are Nova DevDocs, an expert voice assistant for software developers powered by Amazon Nova 2 Lite.
+Your role: Answer technical questions accurately and concisely, as if you're a senior developer colleague.
+${kbContext ? 'Use the provided knowledge base documents to answer questions.' : 'No documents loaded yet — answer from general knowledge and suggest the user upload their docs.'}
+Rules:
+- Keep answers focused and practical
+- Format code with backticks like \`npm install express\`
+- Be direct and developer-friendly
+- Remember conversation context for follow-ups
+${kbContext}`;
+
+  conversationHistory.push({ role: 'user', content: msg });
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: msg,
+        sessionId: sessionId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error || 'Server error');
+
+    // Persist session
+    if (data.sessionId) sessionId = data.sessionId;
+
+    const reply = data.answer || 'No answer returned.';
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+    removeTyping(typingId);
+    addMessage('assistant', reply, { model: 'nova-lite-v1', voice: false, sources: data.sources });
+
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  } catch (err) {
+    removeTyping(typingId);
+    addMessage('assistant', `⚠️ ${err.message}. Make sure the server is running and AWS credentials are configured.`, { model: 'nova-lite-v1', voice: false });
+  }
+}
+
+function addMessage(role, text, meta = {}) {
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  // Format text with code backticks
+  const formatted = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  const metaHtml = role === 'assistant' ? `
+    <div class="msg-meta">
+      <span class="msg-model">${meta.model || 'nova-lite-v1'}</span>
+      ${meta.voice ? '<span class="msg-voice-badge">🎙 sonic</span>' : ''}
+      <span>${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+    </div>
+  ` : '';
+
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+    <div>
+      <div class="msg-bubble">${formatted}</div>
+      ${metaHtml}
+    </div>
+  `;
+
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addTyping(id) {
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.id = id;
+  div.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="typing">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function addHistory(text) {
+  historyItems.unshift({ text, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+  if (historyItems.length > 20) historyItems.pop();
+
+  historyList.innerHTML = historyItems.map((item, i) => `
+    <div class="history-item ${i === 0 ? 'active' : ''}">
+      <div class="history-q">${item.text}</div>
+      <div class="history-time">${item.time}</div>
+    </div>
+  `).join('');
+}
+
+// ─── VOICE ──────────────────────────────────────────
+const voiceOverlay = document.getElementById('voice-overlay');
+const voiceLabel = document.getElementById('voice-label');
+const voiceSub = document.getElementById('voice-sub');
+const voiceTranscript = document.getElementById('voice-transcript');
+const voiceOrb = document.getElementById('voice-orb');
+const waveform = document.getElementById('waveform');
+const btnMic = document.getElementById('btn-mic');
+
+function toggleVoice() {
+  if (isRecording) { stopRecording(); return; }
+  startVoice();
+}
+
+function startVoice() {
+  voiceOverlay.classList.add('active');
+  voiceLabel.textContent = 'Listening…';
+  voiceSub.textContent = '// powered by Amazon Nova 2 Sonic';
+  voiceTranscript.textContent = '';
+  isRecording = true;
+  btnMic.classList.add('recording');
+  liveTranscript = '';
+
+  // Web Speech API for demo (in production: Nova 2 Sonic handles this)
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = e => {
+      let interim = '';
+      let final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      liveTranscript = (liveTranscript + final).trim();
+      voiceTranscript.textContent = '"' + (liveTranscript || interim) + '"';
+    };
+
+    recognition.onerror = () => {
+      voiceTranscript.textContent = '// Microphone access required — check browser permissions';
+    };
+
+    recognition.start();
+  } else {
+    voiceTranscript.textContent = '// Speech recognition demo — type your question below';
+    setTimeout(() => {
+      // Simulate transcript appearing
+      const demos = ['How do I set up OAuth2 in Node.js?', 'What packages do I need to install?', 'Explain the middleware pipeline'];
+      const demo = demos[Math.floor(Math.random() * demos.length)];
+      let i = 0;
+      const interval = setInterval(() => {
+        voiceTranscript.textContent = '"' + demo.slice(0, ++i) + '"';
+        if (i >= demo.length) { clearInterval(interval); liveTranscript = demo; }
+      }, 40);
+    }, 800);
+  }
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  btnMic.classList.remove('recording');
+
+  if (recognition) { recognition.stop(); recognition = null; }
+
+  if (liveTranscript) {
+    voiceLabel.textContent = 'Processing…';
+    voiceSub.textContent = '// Nova 2 Sonic → Nova 2 Lite';
+    voiceOrb.classList.add('speaking');
+    waveform.classList.remove('recording');
+
+    setTimeout(() => {
+      closeVoice();
+      sendMessage(liveTranscript);
+    }, 800);
+  } else {
+    closeVoice();
+  }
+}
+
+function closeVoice() {
+  voiceOverlay.classList.remove('active');
+  voiceOrb.classList.remove('speaking');
+  isRecording = false;
+  btnMic.classList.remove('recording');
+  if (recognition) { recognition.stop(); recognition = null; }
+}
+
+// ─── TOAST ──────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── ESC to close voice ──────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && voiceOverlay.classList.contains('active')) closeVoice();
+});
+</script>
+</body>
+</html>
