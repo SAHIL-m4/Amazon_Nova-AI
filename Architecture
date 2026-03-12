@@ -1,0 +1,22 @@
+Developer (speaks)
+      │
+      ▼ audio stream
+┌─────────────────────┐
+│  Amazon Nova Sonic  │  ← speech-to-speech, real-time
+│  nova-sonic-v1:0    │
+└─────────────────────┘
+      │
+      ▼ transcribed intent
+┌─────────────────────┐
+│  Amazon Nova Lite   │  ← agentic reasoning + tool use
+│  nova-lite-v1:0     │
+└─────────────────────┘
+      │
+      ▼ doc queries
+┌─────────────────────┐
+│   Knowledge Base    │  ← your docs, wikis, READMEs
+│  S3 + Kendra / local│
+└─────────────────────┘
+      │
+      ▼ synthesized answer
+Developer (hears spoken response)
