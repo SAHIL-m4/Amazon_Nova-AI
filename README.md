@@ -1,5 +1,8 @@
 # Amazon_Nova-AI
 
+<img width="1340" height="706" alt="image" src="https://github.com/user-attachments/assets/492eb033-4a8e-42b8-a90c-03047ed3cddf" />
+
+
  Talk to your docs. Real-time voice assistant for developers built with Amazon Nova 2 Sonic + Nova 2 Lite on AWS Bedrock. 
 
 Nova DevDocs is a real-time voice-powered AI assistant that lets developers speak questions out loud and receive instant spoken answers from their own documentation — no typing, no searching, no context switching.
